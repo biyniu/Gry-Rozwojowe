@@ -1,37 +1,45 @@
 
-const CACHE_NAME = 'startkids-v1';
-const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+const CACHE_NAME = 'startkids-v2';
+const URLS_TO_CACHE = [
+  './index.html',
+  './manifest.json'
 ];
 
-// Install Event
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS);
+      return cache.addAll(URLS_TO_CACHE);
     })
   );
 });
 
-// Fetch Event
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      // Return cached response if found
+      if (response) {
+        return response;
+      }
+      
+      // Otherwise fetch from network
+      return fetch(event.request).catch(() => {
+        // Fallback for navigation (HTML) requests if offline and not in cache
+        if (event.request.mode === 'navigate') {
+          return caches.match('./index.html');
+        }
+      });
     })
   );
 });
 
-// Activate Event (Cleanup old caches)
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keyList) => {
+    caches.keys().then((cacheNames) => {
       return Promise.all(
-        keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            return caches.delete(cacheName);
           }
         })
       );
