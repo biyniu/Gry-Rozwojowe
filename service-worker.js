@@ -1,22 +1,20 @@
 
-const CACHE_NAME = 'startkids-v3';
+const CACHE_NAME = 'startkids-v4';
 const URLS_TO_CACHE = [
-  './',
   './index.html',
   './manifest.json'
 ];
 
-// Install: Cache core assets
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  self.skipWaiting(); // Force activation immediately
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(URLS_TO_CACHE);
+      // We use {cache: 'reload'} to ensure we get fresh files during install
+      return cache.addAll(URLS_TO_CACHE.map(url => new Request(url, {cache: 'reload'})));
     })
   );
 });
 
-// Activate: Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -29,34 +27,36 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim();
+  self.clients.claim(); // Take control of all clients immediately
 });
 
-// Fetch: Handle requests
 self.addEventListener('fetch', (event) => {
-  // Navigation strategy (HTML): Network first, then Cache (fallback to index.html)
+  // 1. Navigation Requests (HTML)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
         .catch(() => {
-          return caches.match('./index.html')
-            .then((response) => {
-              // If index.html is found in cache, return it
-              if (response) return response;
-              // If not, try matching the root '/' (common in some setups)
-              return caches.match('./');
-            });
+          // If network fails (offline or 404), return cached index.html
+          return caches.match('./index.html').then(response => {
+             if (response) return response;
+             // Absolute fallback if cache is empty
+             return new Response('Błąd: Brak połączenia. Odśwież stronę gdy będziesz online.', {
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+             });
+          });
         })
     );
     return;
   }
 
-  // Asset strategy: Cache first, then Network
+  // 2. Asset Requests (Images, Scripts, etc.)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
+      // Return cached if present
       if (cachedResponse) {
         return cachedResponse;
       }
+      // Otherwise fetch from network
       return fetch(event.request);
     })
   );
