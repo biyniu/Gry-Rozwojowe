@@ -1,0 +1,21 @@
+{
+  "short_name": "StartKids",
+  "name": "StartKids - Gry Rozwojowe",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081329.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081329.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#FCD34D",
+  "background_color": "#EFF6FF",
+  "orientation": "portrait"
+}
