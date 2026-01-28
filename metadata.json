@@ -1,0 +1,7 @@
+{
+  "name": "StartKids - Gry Rozwojowe",
+  "description": "Edukacyjna aplikacja PWA dla dzieci w wieku 3-6 lat z grami dostosowanymi do wieku (Memory, Liczenie, Logika, Opowiadania AI).",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
