@@ -1,10 +1,12 @@
 
-const CACHE_NAME = 'startkids-v2';
+const CACHE_NAME = 'startkids-v3';
 const URLS_TO_CACHE = [
+  './',
   './index.html',
   './manifest.json'
 ];
 
+// Install: Cache core assets
 self.addEventListener('install', (event) => {
   self.skipWaiting();
   event.waitUntil(
@@ -14,25 +16,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      // Return cached response if found
-      if (response) {
-        return response;
-      }
-      
-      // Otherwise fetch from network
-      return fetch(event.request).catch(() => {
-        // Fallback for navigation (HTML) requests if offline and not in cache
-        if (event.request.mode === 'navigate') {
-          return caches.match('./index.html');
-        }
-      });
-    })
-  );
-});
-
+// Activate: Clean old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -43,6 +27,37 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    })
+  );
+  self.clients.claim();
+});
+
+// Fetch: Handle requests
+self.addEventListener('fetch', (event) => {
+  // Navigation strategy (HTML): Network first, then Cache (fallback to index.html)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          return caches.match('./index.html')
+            .then((response) => {
+              // If index.html is found in cache, return it
+              if (response) return response;
+              // If not, try matching the root '/' (common in some setups)
+              return caches.match('./');
+            });
+        })
+    );
+    return;
+  }
+
+  // Asset strategy: Cache first, then Network
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request);
     })
   );
 });
